@@ -47,6 +47,11 @@ class Config:
         """获取API基础URL"""
         return self._config.get("base_url", "https://qyapi.weixin.qq.com/cgi-bin")
     
+    @property
+    def api_token(self) -> str:
+        """获取API认证Token"""
+        return self._config.get("api_token", "")
+    
     def reload(self):
         """重新加载配置"""
         self._config = self._load_config()

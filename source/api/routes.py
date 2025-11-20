@@ -7,6 +7,7 @@ from ..wechat import WechatWorkClient
 from ..config_manager import Config
 from ..logging_manager import logger
 from ..database import init_database
+from ..utils import require_token
 
 
 def create_app(config_path: str = "config/config.json") -> Flask:
@@ -28,11 +29,13 @@ def create_app(config_path: str = "config/config.json") -> Flask:
     db = init_database()
     
     @app.route('/send', methods=['POST'])
+    @require_token(config)
     def send_message():
         """
         发送企业微信消息接口
         
         请求头:
+            X-API-Token: API认证Token(必填)
             X-Corp-Id: 企业ID(必填)
             X-Corp-Secret: 应用密钥(必填)
             X-Agent-Id: 应用AgentId(必填)
@@ -205,9 +208,13 @@ def create_app(config_path: str = "config/config.json") -> Flask:
         }), 200
     
     @app.route('/logs', methods=['GET'])
+    @require_token(config)
     def get_logs():
         """
         获取请求日志
+        
+        请求头:
+            X-API-Token: API认证Token(必填)
         
         请求参数:
             limit: 返回数量,默认100
@@ -235,9 +242,13 @@ def create_app(config_path: str = "config/config.json") -> Flask:
             }), 500
     
     @app.route('/statistics', methods=['GET'])
+    @require_token(config)
     def get_statistics():
         """
         获取统计数据
+        
+        请求头:
+            X-API-Token: API认证Token(必填)
         
         请求参数:
             days: 统计天数,默认7天
