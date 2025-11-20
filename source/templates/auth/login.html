@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - 企业微信消息推送服务</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="/static/css/style.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container-fluid min-vh-100 d-flex align-items-center justify-content-center">
+        <div class="row justify-content-center w-100">
+            <div class="col-md-5">
+                <div class="card shadow-lg">
+                    <div class="card-header text-center">
+                        <h3 class="mb-0"><i class="bi bi-box-arrow-in-right"></i> 用户登录</h3>
+                    </div>
+                    <div class="card-body p-5">
+                        {% if error %}
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="bi bi-exclamation-triangle"></i> {{ error }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                        {% endif %}
+                        
+                        <form id="loginForm">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                            
+                            <div class="mb-4">
+                                <label for="username" class="form-label">用户名</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-person"></i></span>
+                                    <input type="text" class="form-control form-control-lg" id="username" name="username" placeholder="请输入用户名" required>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="password" class="form-label">密码</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                                    <input type="password" class="form-control form-control-lg" id="password" name="password" placeholder="请输入密码" required>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-4 form-check">
+                                <input type="checkbox" class="form-check-input" id="remember_me" name="remember_me">
+                                <label class="form-check-label" for="remember_me">记住我</label>
+                            </div>
+                            
+                            <div class="d-grid mb-3">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <span class="btn-text">登录</span>
+                                    <span class="loading spinner-border spinner-border-sm d-none" role="status"></span>
+                                </button>
+                            </div>
+                            
+                            <div class="text-center mt-4">
+                                <p class="text-muted mb-0">
+                                    <i class="bi bi-shield-lock"></i> 企业微信消息推送服务
+                                </p>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="/static/js/main.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#loginForm').on('submit', function(e) {
+                e.preventDefault();
+                
+                // 显示加载状态
+                const submitBtn = $(this).find('button[type="submit"]');
+                const btnText = submitBtn.find('.btn-text');
+                const loading = submitBtn.find('.loading');
+                
+                btnText.addClass('d-none');
+                loading.removeClass('d-none');
+                submitBtn.prop('disabled', true);
+                
+                const username = $('#username').val();
+                const password = $('#password').val();
+                const remember_me = $('#remember_me').is(':checked');
+                
+                $.ajax({
+                    url: '/auth/login',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        username: username,
+                        password: password,
+                        remember_me: remember_me
+                    }),
+                    success: function(response) {
+                        if (response.success) {
+                            window.location.href = '/dashboard';
+                        } else {
+                            // 恢复按钮状态
+                            btnText.removeClass('d-none');
+                            loading.addClass('d-none');
+                            submitBtn.prop('disabled', false);
+                            
+                            // 显示错误信息
+                            alert('登录失败: ' + response.error);
+                        }
+                    },
+                    error: function(xhr) {
+                        // 恢复按钮状态
+                        btnText.removeClass('d-none');
+                        loading.addClass('d-none');
+                        submitBtn.prop('disabled', false);
+                        
+                        const response = JSON.parse(xhr.responseText);
+                        alert('登录失败: ' + response.error);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

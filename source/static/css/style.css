@@ -1,0 +1,213 @@
+/* 自定义样式 */
+:root {
+    --primary-color: #96ceb4;
+    --primary-dark: #7ab89f;
+    --success-color: #a8e6cf;
+    --warning-color: #ffeaa7;
+    --danger-color: #ffaaa5;
+    --info-color: #95d5b2;
+    --dark-color: #52796f;
+    --light-color: #f8f9fa;
+    --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --transition: all 0.3s ease;
+}
+
+body {
+    background: linear-gradient(135deg, #f1faee 0%, #d8f3dc 100%);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    min-height: 100vh;
+}
+
+/* 导航栏美化 */
+.navbar {
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-brand {
+    font-weight: 700;
+    font-size: 1.4rem;
+    background: linear-gradient(45deg, var(--primary-color), var(--info-color));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.nav-link {
+    font-weight: 500;
+}
+
+/* 卡片美化 */
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: var(--card-shadow);
+    margin-bottom: 1.5rem;
+}
+
+.card-header {
+    background: linear-gradient(120deg, var(--primary-color), var(--primary-dark));
+    color: white;
+    border-radius: 12px 12px 0 0 !important;
+    border: none;
+    font-weight: 600;
+}
+
+/* 统计卡片 */
+.stat-card {
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    color: white;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+.stat-card .card-body {
+    position: relative;
+    z-index: 1;
+}
+
+.stat-card h2 {
+    font-weight: 700;
+    font-size: 2rem;
+}
+
+.stat-card .icon {
+    font-size: 2.5rem;
+    opacity: 0.8;
+}
+
+/* 表单美化 */
+.form-control, .form-select {
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 0.75rem 1rem;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.25rem rgba(168, 230, 207, 0.35);
+}
+.form-label {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+/* 按钮美化 */
+.btn {
+    border-radius: 8px;
+    padding: 0.6rem 1.2rem;
+    font-weight: 500;
+    border: none;
+}
+
+.btn-primary {
+    background: linear-gradient(120deg, var(--primary-color), var(--primary-dark));
+}
+
+.btn-secondary {
+    background: linear-gradient(120deg, #95d5b2, #74c0a0);
+}
+
+/* 表格美化 */
+.table {
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.table thead th {
+    background: linear-gradient(120deg, var(--primary-color), var(--primary-dark));
+    color: white;
+    font-weight: 600;
+    border: none;
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(248, 249, 250, 0.7);
+}
+
+/* 分页美化 */
+.pagination {
+    margin-top: 20px;
+}
+
+.page-link {
+    border-radius: 8px !important;
+    margin: 0 3px;
+    border: 1px solid #e2e8f0;
+    color: var(--primary-color);
+}
+
+.page-item.active .page-link {
+    background: linear-gradient(120deg, var(--primary-color), var(--primary-dark));
+    border-color: var(--primary-color);
+}
+
+/* 警告框美化 */
+.alert {
+    border-radius: 10px;
+    border: none;
+    box-shadow: var(--card-shadow);
+}
+
+.alert-danger {
+    background: linear-gradient(120deg, #ffaaa5, #ff9090);
+    color: white;
+}
+
+/* 下拉菜单美化 */
+.dropdown-menu {
+    border-radius: 10px;
+    border: none;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.dropdown-item {
+    border-radius: 5px;
+    margin: 2px 8px;
+}
+
+/* 响应式优化 */
+@media (max-width: 768px) {
+    .container-fluid {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+    
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+    
+    .stat-card h2 {
+        font-size: 1.5rem;
+    }
+    
+    .stat-card .icon {
+        font-size: 2rem;
+    }
+}
+
+/* 加载动画 */
+.loading {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255,255,255,.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
