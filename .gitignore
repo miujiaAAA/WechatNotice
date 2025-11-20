@@ -5,6 +5,13 @@
 logs/
 *.log
 
+# PID文件
+*.pid
+
+# 数据库文件
+data/
+*.db
+
 # Python
 __pycache__/
 *.py[cod]

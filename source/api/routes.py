@@ -1,10 +1,12 @@
 """
 Flask应用路由
 """
+import time
 from flask import Flask, request, jsonify
 from ..wechat import WechatWorkClient
 from ..config_manager import Config
 from ..logging_manager import logger
+from ..database import init_database
 
 
 def create_app(config_path: str = "config/config.json") -> Flask:
@@ -21,6 +23,9 @@ def create_app(config_path: str = "config/config.json") -> Flask:
     
     # 加载配置
     config = Config(config_path)
+    
+    # 初始化数据库
+    db = init_database()
     
     @app.route('/send', methods=['POST'])
     def send_message():
@@ -39,7 +44,21 @@ def create_app(config_path: str = "config/config.json") -> Flask:
         返回:
             JSON格式的发送结果
         """
+        start_time = time.time()
         client_ip = request.remote_addr
+        user_agent = request.headers.get('User-Agent', 'Unknown')
+        method = request.method
+        path = request.path
+        
+        # 初始化请求信息
+        corpid = None
+        agentid = None
+        touser = None
+        message = None
+        status_code = 200
+        success = True
+        error_msg = None
+        
         logger.info(f"收到消息推送请求 - IP: {client_ip}")
         
         try:
@@ -50,52 +69,70 @@ def create_app(config_path: str = "config/config.json") -> Flask:
             
             # 验证请求头参数
             if not corpid:
-                logger.warning(f"请求头缺少 X-Corp-Id - IP: {client_ip}")
+                status_code = 400
+                success = False
+                error_msg = "请求头缺少 X-Corp-Id"
+                logger.warning(f"{error_msg} - IP: {client_ip}")
                 return jsonify({
                     "success": False,
-                    "error": "请求头缺少 X-Corp-Id"
-                }), 400
+                    "error": error_msg
+                }), status_code
             
             if not corpsecret:
-                logger.warning(f"请求头缺少 X-Corp-Secret - IP: {client_ip}")
+                status_code = 400
+                success = False
+                error_msg = "请求头缺少 X-Corp-Secret"
+                logger.warning(f"{error_msg} - IP: {client_ip}")
                 return jsonify({
                     "success": False,
-                    "error": "请求头缺少 X-Corp-Secret"
-                }), 400
+                    "error": error_msg
+                }), status_code
             
             if not agentid:
-                logger.warning(f"请求头缺少 X-Agent-Id - IP: {client_ip}")
+                status_code = 400
+                success = False
+                error_msg = "请求头缺少 X-Agent-Id"
+                logger.warning(f"{error_msg} - IP: {client_ip}")
                 return jsonify({
                     "success": False,
-                    "error": "请求头缺少 X-Agent-Id"
-                }), 400
+                    "error": error_msg
+                }), status_code
             
             try:
                 agentid = int(agentid)
             except ValueError:
-                logger.warning(f"X-Agent-Id 格式错误 - IP: {client_ip}")
+                status_code = 400
+                success = False
+                error_msg = "X-Agent-Id 必须是数字"
+                logger.warning(f"{error_msg} - IP: {client_ip}")
                 return jsonify({
                     "success": False,
-                    "error": "X-Agent-Id 必须是数字"
-                }), 400
+                    "error": error_msg
+                }), status_code
             
             # 获取请求参数
             data = request.get_json()
             
             if not data:
-                logger.warning(f"请求体为空 - IP: {client_ip}")
+                status_code = 400
+                success = False
+                error_msg = "请求体为空"
+                logger.warning(f"{error_msg} - IP: {client_ip}")
                 return jsonify({
                     "success": False,
                     "error": "请求体不能为空"
-                }), 400
+                }), status_code
             
             message = data.get("message")
             if not message:
-                logger.warning(f"消息内容为空 - IP: {client_ip}")
+                status_code = 400
+                success = False
+                error_msg = "消息内容为空"
+                logger.warning(f"{error_msg} - IP: {client_ip}")
                 return jsonify({
                     "success": False,
                     "error": "消息内容不能为空"
-                }), 400
+                }), status_code
             
             touser = data.get("touser", "@all")
             
@@ -119,15 +156,44 @@ def create_app(config_path: str = "config/config.json") -> Flask:
                 logger.info(f"消息发送成功 - CorpId: {corpid}, Touser: {touser}")
                 return jsonify(result), 200
             else:
-                logger.error(f"消息发送失败 - CorpId: {corpid}, Error: {result.get('errmsg', result.get('error'))}")
-                return jsonify(result), 500
+                status_code = 500
+                success = False
+                error_msg = result.get('errmsg', result.get('error'))
+                logger.error(f"消息发送失败 - CorpId: {corpid}, Error: {error_msg}")
+                return jsonify(result), status_code
                 
         except Exception as e:
-            logger.error(f"服务器错误 - IP: {client_ip}, Error: {str(e)}", exc_info=True)
+            status_code = 500
+            success = False
+            error_msg = str(e)
+            logger.error(f"服务器错误 - IP: {client_ip}, Error: {error_msg}", exc_info=True)
             return jsonify({
                 "success": False,
-                "error": f"服务器错误: {str(e)}"
-            }), 500
+                "error": f"服务器错误: {error_msg}"
+            }), status_code
+        
+        finally:
+            # 计算响应时间(毫秒)
+            response_time = (time.time() - start_time) * 1000
+            
+            # 将请求日志存入数据库
+            try:
+                db.insert_request_log(
+                    method=method,
+                    path=path,
+                    client_ip=client_ip,
+                    user_agent=user_agent,
+                    corp_id=corpid,
+                    agent_id=agentid,
+                    touser=touser,
+                    message=message[:500] if message else None,  # 限制消息长度
+                    status_code=status_code,
+                    response_time=round(response_time, 2),
+                    success=success,
+                    error_message=error_msg
+                )
+            except Exception as db_error:
+                logger.error(f"记录请求日志到数据库失败: {str(db_error)}")
     
     @app.route('/health', methods=['GET'])
     def health_check():
@@ -137,5 +203,58 @@ def create_app(config_path: str = "config/config.json") -> Flask:
             "status": "ok",
             "service": "企业微信消息推送服务"
         }), 200
+    
+    @app.route('/logs', methods=['GET'])
+    def get_logs():
+        """
+        获取请求日志
+        
+        请求参数:
+            limit: 返回数量,默认100
+            corp_id: 过滤企业ID(可选)
+        """
+        try:
+            limit = request.args.get('limit', 100, type=int)
+            corp_id = request.args.get('corp_id')
+            
+            if corp_id:
+                logs = db.get_logs_by_corp_id(corp_id, limit)
+            else:
+                logs = db.get_recent_logs(limit)
+            
+            return jsonify({
+                "success": True,
+                "count": len(logs),
+                "data": logs
+            }), 200
+        except Exception as e:
+            logger.error(f"获取日志失败: {str(e)}")
+            return jsonify({
+                "success": False,
+                "error": str(e)
+            }), 500
+    
+    @app.route('/statistics', methods=['GET'])
+    def get_statistics():
+        """
+        获取统计数据
+        
+        请求参数:
+            days: 统计天数,默认7天
+        """
+        try:
+            days = request.args.get('days', 7, type=int)
+            stats = db.get_statistics(days)
+            
+            return jsonify({
+                "success": True,
+                "data": stats
+            }), 200
+        except Exception as e:
+            logger.error(f"获取统计数据失败: {str(e)}")
+            return jsonify({
+                "success": False,
+                "error": str(e)
+            }), 500
     
     return app
